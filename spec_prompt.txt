@@ -1,0 +1,155 @@
+DEVAD — IMPLEMENTATION CONTRACT
+===============================
+
+Product:
+DevAd — “An advertising agent that remembers what worked.”
+
+Core principle:
+CAMPAIGN → RECALL → EVIDENCE → DECISION → REEL → OUTCOME → LESSON → RETAIN → BETTER NEXT CAMPAIGN
+
+1. HINDSIGHT IS CENTRAL
+------------------------
+- Hindsight is the persistent memory system.
+- Do not replace it with a local vector database.
+- Memory OFF must be a true baseline.
+- Memory ON must explicitly attempt Hindsight recall.
+- If recall fails, mark memory as unavailable and never claim the campaign was memory-informed.
+- After an outcome, generate a reusable lesson and retain the campaign experience in Hindsight.
+- Only show a successful learning state when Retain actually succeeds.
+- Distinguish Hindsight memory counts from local SQLite evidence records.
+
+2. LLM ARCHITECTURE
+--------------------
+- Primary LLM: Groq.
+- Default model: openai/gpt-oss-120b.
+- All primary Groq calls go through backend/app/services/groq.py.
+- Use structured JSON and Pydantic validation.
+- Retry transient Groq failures.
+- Optional fallback: Gemini, enabled only when GEMINI_API_KEY is configured.
+- Gemini is a fallback reasoning model, not the video generator.
+- Never expose API keys to the frontend.
+
+3. EVIDENCE ENGINE
+-------------------
+For every recalled memory:
+- calculate transparent relevance
+- show component matches for product/category, audience, platform, objective and creative format
+- extract measurable metrics where available
+- classify performance using transparent rules
+- identify positive/negative patterns
+- detect conflicts and preserve uncertainty
+
+4. CAMPAIGN GENERATION
+-----------------------
+Groq receives:
+- current campaign brief
+- recalled Hindsight evidence
+- evidence-engine analysis
+- explicit memory availability state
+
+Groq returns:
+- strategic insight
+- messaging angle
+- creative direction
+- ad headline/copy/CTA
+- 5–6 scene Reel blueprint
+- evidence reasoning
+- risks/uncertainties
+
+5. REEL REQUIREMENT
+-------------------
+DevAd must produce a REAL MP4 advertisement, not only a storyboard.
+
+Target:
+- 20–30 seconds
+- 9:16 vertical
+- 1080×1920
+- H.264 video + AAC audio
+- 5–6 scenes
+- hook → problem/need → product → benefit/proof → CTA
+- voiceover
+- on-screen text/captions
+
+Default implementation:
+- Groq generates the blueprint.
+- Local renderer creates visual scene cards and motion-ready assets.
+- Offline TTS uses pyttsx3 where available and espeak as fallback.
+- FFmpeg assembles the final MP4.
+- No paid video API is required.
+
+Do not claim this renderer is text-to-video diffusion. Keep an AI-video provider behind the provider abstraction for future enhancement.
+
+6. OUTCOME + LEARNING
+---------------------
+When a campaign outcome is recorded:
+- calculate CTR/CVR/CPA/ROAS where possible
+- generate a concise reusable lesson with Groq when context is available
+- fall back to deterministic lesson generation if LLM generation fails
+- create LearningEvent with pending/retained/failed Hindsight state
+- retain the outcome + lesson in Hindsight
+- never show “learned” when Retain failed
+
+7. DEMO MODE
+------------
+The Dashboard must provide a Learning Demo action.
+The demo:
+- requires synthetic history
+- creates a related campaign
+- enables Memory ON
+- recalls previous experiences
+- creates a changed strategy
+- produces a Reel
+
+The UI must make this sequence visible.
+
+8. RELIABILITY
+--------------
+- Seed data must not mutate global fixtures.
+- Do not silently swallow Hindsight errors.
+- Creative rendering failure must not erase the strategy/memory result.
+- Keep provider boundaries small.
+- Preserve existing working routes and data structures unless a change is required.
+
+9. REPOSITORY HYGIENE
+----------------------
+Do not commit:
+.env
+.venv/
+frontend/node_modules/
+*.db
+frontend/dist/
+Python caches
+Generated Reel files
+
+10. TESTING
+-----------
+Backend:
+- compileall
+- unit tests for evidence, outcomes and schemas
+- tests for memory-state handling
+- tests for lesson fallback
+- tests for Reel normalization/output contract
+
+Frontend:
+- TypeScript noEmit check
+- Vite production build
+- UI tests where practical
+
+11. PRODUCT POSITIONING
+-----------------------
+DevAd is not positioned as a generic AI ad-copy generator.
+Its core value is institutional memory for performance-marketing decisions:
+
+“DevAd remembers what happened, turns outcomes into lessons, and uses those lessons when creating the next campaign.”
+
+FINAL IMPLEMENTATION CONTRACT
+
+- Strategy output must include `memory_influence` so a memory-informed creative decision is explainable.
+- Dashboard/runtime status must expose Groq configuration, Hindsight reachability, and local product-poster readiness.
+- A failed Hindsight Retain may be retried without creating a second outcome.
+- Static image generation must preserve the uploaded product photo and render exact copy locally.
+- Carousel generation must produce three distinct product-grounded posters.
+- Static creatives must never be converted into Reels.
+- The final zero-cost build must not require Gemini, Veo, Runway, Luma, OpenAI, or another paid visual-generation API.
+- The generated poster must not claim photorealistic human generation when no image-generation model is configured.
+- The final demo should make the loop visible: recall → evidence → decision → product creative → outcome → lesson → retain → later recall → changed decision.
